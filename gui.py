@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 from image_editor import *
-from calculator import CalculatorWindow
-
+from PIL import Image, ImageDraw, ImageFont
+import textwrap
 
 class Application(tk.Tk):
     def __init__(self):
@@ -13,14 +13,8 @@ class Application(tk.Tk):
         self.title("Article Builder")
         self.geometry("500x600")
 
-        self.create_label_entry("Название:", "game_name")
-        self.create_label_combobox("Русский язык:", "russian_language",
-                                   ["СУБТИТРЫ", "ПОЛНАЯ ЛОКАЛИЗАЦИЯ", "БЕЗ ПЕРЕВОДА"])
-        self.create_label_combobox("Платформы:", "platforms", ["Xbox ONE", "Xbox Series X", "Xbox Series S", "One,Series S|X"])
-        self.create_label_combobox("Версия игры:", "game_version", ["Standard Edition", "Deluxe Edition", "Ultimate Edition"])
-        self.create_label_entry("Цена:", "game_price")
-        self.create_label_entry("Скидка:", "discount")
-        self.create_label_entry("Дата окончания скидки:", "discount_end_date")
+        self.create_label_entry("Заголовок:", "title")
+        self.create_label_entry("Текст:", "main_text")
 
         # Создаем кнопку для выбора изображения
         self.image_path = tk.StringVar()
@@ -37,9 +31,8 @@ class Application(tk.Tk):
         label.pack(fill='x', padx=5, pady=5)
 
         # Создаем поле для ввода
-        entry_var = tk.StringVar()
-        setattr(self, entry_var_name, entry_var)
-        entry = ttk.Entry(self, textvariable=entry_var)
+        entry = tk.Text(self, height=4, width=50)
+        setattr(self, entry_var_name, entry)
         entry.pack(fill='x', padx=5)
 
     def create_label_combobox(self, label_text, combobox_var_name, values):
@@ -58,48 +51,52 @@ class Application(tk.Tk):
         file_path = filedialog.askopenfilename()
         self.image_path.set(file_path)
 
+    def wrap_text(self, text, max_width, font, image):
+        words = text.split()
+        lines = []
+        current_line = []
+        current_width = 0
+
+        draw = ImageDraw.Draw(image)  # Создаем объект draw здесь
+
+        for word in words:
+            word_width, _ = draw.textsize(word, font=font)
+            if current_width + word_width <= max_width:
+                current_line.append(word)
+                current_width += word_width
+            else:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+                current_width = word_width
+
+        lines.append(' '.join(current_line))  # add the last line
+        return '\n'.join(lines)
+
     def submit(self):
         # Получаем данные из полей для ввода
-        game_link = self.game_link.get()
-        game_name = self.game_name.get()
-        russian_language = self.russian_language.get()
-        platforms = self.platforms.get()
+        title = self.title.get("1.0", 'end-1c')
+        main_text = self.main_text.get("1.0", 'end-1c')
 
-        game_version = self.game_version.get()
-        game_price = self.game_price.get()
-        discount = self.discount.get()
-        discount_end_date = self.discount_end_date.get()
+        # Создаем объект ImageEditor для редактирования изображения
+        editor = ImageEditor("images/background_white.png")
 
-        discount_position_square = [3000, 3620]
-        discount_position_text = [3030, 3675]
+        # Загружаем шрифт (предполагается, что файл шрифта находится в той же директории)
+        font_title_path = "fonts/segoe-ui-gras.ttf"
+        font_text_path = "fonts/segoe-ui.ttf"
+        font_size = 45
 
+        # Создаем объекты font и draw
+        font_title = ImageFont.truetype(font_title_path, font_size)
+        font_text = ImageFont.truetype(font_text_path, font_size)
 
+        # Разбиваем текст на строки
+        title = self.wrap_text(title, 1000, font_title, editor.image)
+        main_text = self.wrap_text(main_text, 1000, font_text, editor.image)
 
-        # Open the background image
-        background = Image.open(self.image_path.get())
-
-        # Изменяем размер фонового изображения
-        width_ratio = 4096 / background.width
-        height_ratio = 3565 / background.height
-        ratio = max(width_ratio, height_ratio)
-        new_width = int(background.width * ratio)
-        new_height = int(background.height * ratio)
-        background = background.resize((new_width, new_height))
-
-        # Обрезаем фоновое изображение
-        left_margin = (background.width - 4096) / 2
-        top_margin = (background.height - 3565) / 2
-        background = background.crop((left_margin, top_margin, left_margin + 4096, top_margin + 3565))
-
-        # Создаем черное изображение нужного размера
-        black_square = Image.new('RGB', (4096, 4857 - 3565), color='black')
-
-        # Объединяем фоновое изображение и черный квадрат
-        final_image = Image.new('RGB', (4096, 4857))
-        final_image.paste(background, (0, 0))
-        final_image.paste(black_square, (0, 3565))
-
-
+        # Добавляем заголовок и основной текст на изображение
+        # Координаты (x, y) определяют местоположение текста
+        editor.add_gradient_text(title, (50, 50), font_title_path, font_size)
+        editor.add_text(main_text, (50, 100), font_text_path, font_size, "black")
 
         # Сохраняем изображение с уникальным именем файла
         output_path = "output/output.png"
@@ -108,7 +105,7 @@ class Application(tk.Tk):
             output_path = f"output/output{i}.png"
             i += 1
 
-        final_image.save(output_path)
+        editor.save(output_path)
 
 
 if __name__ == "__main__":
