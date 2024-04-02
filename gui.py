@@ -11,7 +11,7 @@ class Application(tk.Tk):
         super().__init__()
 
         self.title("Article Builder")
-        self.geometry("500x600")
+        self.geometry("500x450")
 
         self.create_label_entry("Заголовок:", "title")
         self.create_label_entry("Текст:", "main_text")
@@ -24,6 +24,19 @@ class Application(tk.Tk):
         # Создаем кнопку отправить
         submit_button = ttk.Button(self, text="Создать", command=self.submit)
         submit_button.pack(pady=10)
+
+        # Создаем чекбокс
+        self.arrow_var = tk.BooleanVar()
+        arrow_checkbox = ttk.Checkbutton(self, text="Добавить стрелку", variable=self.arrow_var)
+        arrow_checkbox.pack(pady=10)
+
+        self.xbox_var = tk.BooleanVar()
+        xbox_checkbox = ttk.Checkbutton(self, text="Вотермарк Xbox", variable=self.xbox_var)
+        xbox_checkbox.pack(pady=10)
+
+        self.ps_var = tk.BooleanVar()
+        ps_checkbox = ttk.Checkbutton(self, text="Вотермарк PlayStation", variable=self.ps_var)
+        ps_checkbox.pack(pady=10)
 
     def create_label_entry(self, label_text, entry_var_name):
         # Создаем метку
@@ -83,20 +96,49 @@ class Application(tk.Tk):
         # Загружаем шрифт (предполагается, что файл шрифта находится в той же директории)
         font_title_path = "fonts/segoe-ui-gras.ttf"
         font_text_path = "fonts/segoe-ui.ttf"
-        font_size = 45
+        font_size_title = 90
+        font_size_main = 50
 
         # Создаем объекты font и draw
-        font_title = ImageFont.truetype(font_title_path, font_size)
-        font_text = ImageFont.truetype(font_text_path, font_size)
+        font_title = ImageFont.truetype(font_title_path, font_size_title)
+        font_text = ImageFont.truetype(font_text_path, font_size_main)
 
         # Разбиваем текст на строки
-        title = self.wrap_text(title, 1000, font_title, editor.image)
-        main_text = self.wrap_text(main_text, 1000, font_text, editor.image)
+        title = self.wrap_text(title, 960, font_title, editor.image)
+        main_text = self.wrap_text(main_text, 960, font_text, editor.image)
 
-        # Добавляем заголовок и основной текст на изображение
-        # Координаты (x, y) определяют местоположение текста
-        editor.add_gradient_text(title, (50, 50), font_title_path, font_size)
-        editor.add_text(main_text, (50, 100), font_text_path, font_size, "black")
+        # Рассчитываем высоту текста заголовка
+        title_height = len(title.split('\n')) * font_size_title
+
+        if main_text == "":
+            editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
+        elif title == "":
+            editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32,32,32))
+        else:
+            editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
+            editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+
+        if self.arrow_var.get():
+            # Если выбран, накладываем изображение стрелки
+            arrow_image = Image.open("images/arrow.png")
+            new_size = (300, 300)  # Новый размер в пикселях
+            arrow_image = arrow_image.resize(new_size, Image.ANTIALIAS)
+            editor.image.paste(arrow_image, (440, 750), arrow_image)
+
+        if self.xbox_var.get():
+            xbox_image = Image.open("images/xbox4joy.png")
+            new_size = (220, 220)  # Новый размер в пикселях
+            xbox_image = xbox_image.resize(new_size, Image.ANTIALIAS)
+            editor.image.paste(xbox_image, (470, 1040), xbox_image)
+
+        if self.ps_var.get():
+            ps_image = Image.open("images/ps4joy.png")
+            new_size = (220, 220)  # Новый размер в пикселях
+            ps_image = ps_image.resize(new_size, Image.ANTIALIAS)
+            editor.image.paste(ps_image, (470, 1040), ps_image)
+
+
+
 
         # Сохраняем изображение с уникальным именем файла
         output_path = "output/output.png"
