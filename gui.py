@@ -1,20 +1,23 @@
-import os
 import tkinter as tk
-from tkinter import ttk
 from tkinter import filedialog
 from image_editor import *
 from PIL import Image, ImageDraw, ImageFont
-import textwrap
+import os
 
 class Application(tk.Tk):
     def __init__(self):
         super().__init__()
 
         self.title("Article Builder")
-        self.geometry("500x450")
+        self.geometry("500x500")
 
         self.create_label_entry("Заголовок:", "title")
         self.create_label_entry("Текст:", "main_text")
+
+        # Создаем выпадающий список для выбора фонового изображения
+        self.create_label_combobox("Выберите фон:", "background_var",
+                                   ["background_white.png", "background_white_less.png",
+                                    "background_white_with_image.png", "background_gradient.png"])
 
         # Создаем кнопку для выбора изображения
         self.image_path = tk.StringVar()
@@ -85,13 +88,74 @@ class Application(tk.Tk):
         lines.append(' '.join(current_line))  # add the last line
         return '\n'.join(lines)
 
+    def crop_and_merge(self, user_image_path, template_image_path, template_name):
+        # Открываем изображения
+        user_image = Image.open(user_image_path)
+        template_image = Image.open(template_image_path)
+        black_square = Image.open("images/black_square.png")
+
+        # Вычисляем новые размеры, сохраняя соотношение сторон
+        width, height = user_image.size
+        if template_name == "background_white_with_image.png":
+            new_width = width
+            new_height = int(width / 3.04)
+        elif template_name == "background_white_less.png":
+            new_width = width
+            new_height = int(width / 1.96)
+
+        # Если новая высота больше исходной, то изменяем ширину
+        if new_height > height:
+            new_height = height
+            new_width = int(height * 3.04)
+
+        # Вычисляем координаты для обрезки
+        left = (width - new_width) / 2
+        top = (height - new_height) / 2
+        right = (width + new_width) / 2
+        bottom = (height + new_height) / 2
+
+        # Обрезаем изображение пользователя
+        user_image = user_image.crop((left, top, right, bottom))
+
+        if template_name == "background_white_with_image.png":
+            user_image = user_image.resize((1200, 395), Image.ANTIALIAS)
+        else:
+            user_image = user_image.resize((1200, 612), Image.ANTIALIAS)
+
+        # Объединяем изображение пользователя с черным квадратом
+        black_square.paste(user_image, (0, 0))
+
+        # Объединяем получившееся изображение с шаблоном
+        black_square.paste(template_image, (0, 0), template_image)
+
+        # Сохраняем итоговое изображение во временный файл
+        temp_path = "output/temp.png"
+        black_square.save(temp_path)
+
+        return temp_path
+
     def submit(self):
         # Получаем данные из полей для ввода
         title = self.title.get("1.0", 'end-1c')
         main_text = self.main_text.get("1.0", 'end-1c')
 
-        # Создаем объект ImageEditor для редактирования изображения
-        editor = ImageEditor("images/background_white.png")
+        # Определяем temp_path заранее
+        temp_path = None
+
+        # Получаем выбранное фоновое изображение
+        background_image = getattr(self, "background_var").get()
+
+        # Если выбран один из специальных шаблонов, обрезаем и объединяем изображения
+        if background_image in ["background_white_with_image.png", "background_white_less.png"]:
+            user_image_path = self.image_path.get()
+            template_image_path = f"images/{background_image}"
+            temp_path = self.crop_and_merge(user_image_path, template_image_path, background_image)
+
+            # Создаем объект ImageEditor для редактирования изображения
+            editor = ImageEditor(temp_path)
+        else:
+            # Создаем объект ImageEditor для редактирования изображения
+            editor = ImageEditor(f"images/{background_image}")
 
         # Загружаем шрифт (предполагается, что файл шрифта находится в той же директории)
         font_title_path = "fonts/segoe-ui-gras.ttf"
@@ -110,13 +174,23 @@ class Application(tk.Tk):
         # Рассчитываем высоту текста заголовка
         title_height = len(title.split('\n')) * font_size_title
 
-        if main_text == "":
-            editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
-        elif title == "":
-            editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32,32,32))
+        if background_image != "background_white_less.png":
+            if main_text == "":
+                editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
+            elif title == "":
+                editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32,32,32))
+            else:
+                editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
+                editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main, (32,32,32))
         else:
-            editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
-            editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+            if main_text == "":
+                editor.add_gradient_text(title, (50, 490), font_title_path, font_size_title)
+            elif title == "":
+                editor.add_text(main_text, (50, 590), font_text_path, font_size_main, (32,32,32))
+            else:
+                editor.add_gradient_text(title, (50, 500), font_title_path, font_size_title)
+                editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+
 
         if self.arrow_var.get():
             # Если выбран, накладываем изображение стрелки
@@ -137,9 +211,6 @@ class Application(tk.Tk):
             ps_image = ps_image.resize(new_size, Image.ANTIALIAS)
             editor.image.paste(ps_image, (470, 1040), ps_image)
 
-
-
-
         # Сохраняем изображение с уникальным именем файла
         output_path = "output/output.png"
         i = 1
@@ -149,6 +220,9 @@ class Application(tk.Tk):
 
         editor.save(output_path)
 
+        # Если существует временный файл, удаляем его
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 if __name__ == "__main__":
     app = Application()
