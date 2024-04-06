@@ -14,10 +14,18 @@ class Application(tk.Tk):
         self.create_label_entry("Заголовок:", "title")
         self.create_label_entry("Текст:", "main_text")
 
+        self.backgrounds = {
+            "Белый фон": "background_white.png",
+            "Белый фон с изображением(мал.)": "background_white_with_image.png",
+            "Белый фон с изображением(больш.)": "background_white_less.png",
+            "Градиентный фон": "background_gradient.png",
+            "Желтый фон": "background_yellow.png",
+            "Желтый фон с изображением(больш.)": "background_yellow_less.png",
+            "Желтый фон с изображением(мал.)": "background_yellow_with_image.png"
+        }
+
         # Создаем выпадающий список для выбора фонового изображения
-        self.create_label_combobox("Выберите фон:", "background_var",
-                                   ["background_white.png", "background_white_less.png",
-                                    "background_white_with_image.png", "background_gradient.png"])
+        self.create_label_combobox("Выберите фон:", "background_var", list(self.backgrounds.keys()))
 
         # Создаем кнопку для выбора изображения
         self.image_path = tk.StringVar()
@@ -96,12 +104,13 @@ class Application(tk.Tk):
 
         # Вычисляем новые размеры, сохраняя соотношение сторон
         width, height = user_image.size
-        if template_name == "background_white_with_image.png":
+        if template_name == "background_white_with_image.png" or template_name == "background_yellow_with_image.png":
             new_width = width
             new_height = int(width / 3.04)
-        elif template_name == "background_white_less.png":
+        elif template_name == "background_white_less.png" or template_name == "background_yellow_less.png":
             new_width = width
             new_height = int(width / 1.96)
+
 
         # Если новая высота больше исходной, то изменяем ширину
         if new_height > height:
@@ -142,11 +151,14 @@ class Application(tk.Tk):
         # Определяем temp_path заранее
         temp_path = None
 
-        # Получаем выбранное фоновое изображение
-        background_image = getattr(self, "background_var").get()
+        # Получаем выбранное русское название
+        selected_background = getattr(self, "background_var").get()
+
+        # Используем словарь, чтобы найти соответствующее имя файла
+        background_image = self.backgrounds[selected_background]
 
         # Если выбран один из специальных шаблонов, обрезаем и объединяем изображения
-        if background_image in ["background_white_with_image.png", "background_white_less.png"]:
+        if background_image in ["background_white_with_image.png", "background_white_less.png", "background_yellow_less.png", "background_yellow_with_image.png"]:
             user_image_path = self.image_path.get()
             template_image_path = f"images/{background_image}"
             temp_path = self.crop_and_merge(user_image_path, template_image_path, background_image)
@@ -174,23 +186,39 @@ class Application(tk.Tk):
         # Рассчитываем высоту текста заголовка
         title_height = len(title.split('\n')) * font_size_title
 
-        if background_image != "background_white_less.png":
+        if background_image != "background_white_less.png" and background_image != "background_yellow_less.png":
             if main_text == "":
-                editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
+                if background_image != "background_yellow.png" or background_image != "background_yellow_with_image.png":
+                    editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
+                else:
+                    editor.add_text(title, (50, 460), font_title_path, font_size_title, (28, 28, 28))
             elif title == "":
                 editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32,32,32))
             else:
-                editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
-                editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+                if background_image != "background_yellow.png" or background_image != "background_yellow_with_image.png":
+                    editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
+                    editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main,
+                                    (32, 32, 32))
+                else:
+                    editor.add_text(title, (50, 300), font_title_path, font_size_title, (28, 28, 28))
+                    editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main,
+                                    (32, 32, 32))
+
         else:
             if main_text == "":
                 editor.add_gradient_text(title, (50, 490), font_title_path, font_size_title)
             elif title == "":
-                editor.add_text(main_text, (50, 590), font_text_path, font_size_main, (32,32,32))
+                if background_image != "background_yellow_less.png":
+                    editor.add_text(main_text, (50, 590), font_text_path, font_size_main, (32,32,32))
+                else:
+                    editor.add_text(title, (50, 590), font_title_path, font_size_title, (28, 28, 28))
             else:
-                editor.add_gradient_text(title, (50, 500), font_title_path, font_size_title)
-                editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
-
+                if background_image != "background_yellow_less.png":
+                    editor.add_gradient_text(title, (50, 500), font_title_path, font_size_title)
+                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+                else:
+                    editor.add_text(title, (50, 500), font_title_path, font_size_title, (28, 28, 28))
+                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
 
         if self.arrow_var.get():
             # Если выбран, накладываем изображение стрелки
