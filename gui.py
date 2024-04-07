@@ -111,7 +111,6 @@ class Application(tk.Tk):
             new_width = width
             new_height = int(width / 1.96)
 
-
         # Если новая высота больше исходной, то изменяем ширину
         if new_height > height:
             new_height = height
@@ -126,7 +125,7 @@ class Application(tk.Tk):
         # Обрезаем изображение пользователя
         user_image = user_image.crop((left, top, right, bottom))
 
-        if template_name == "background_white_with_image.png":
+        if template_name == "background_white_with_image.png" or template_name == "background_yellow_with_image.png":
             user_image = user_image.resize((1200, 395), Image.ANTIALIAS)
         else:
             user_image = user_image.resize((1200, 612), Image.ANTIALIAS)
@@ -188,14 +187,14 @@ class Application(tk.Tk):
 
         if background_image != "background_white_less.png" and background_image != "background_yellow_less.png":
             if main_text == "":
-                if background_image != "background_yellow.png" or background_image != "background_yellow_with_image.png":
+                if background_image != "background_yellow.png" and background_image != "background_yellow_with_image.png":
                     editor.add_gradient_text(title, (50, 460), font_title_path, font_size_title)
                 else:
                     editor.add_text(title, (50, 460), font_title_path, font_size_title, (28, 28, 28))
             elif title == "":
-                editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32,32,32))
+                editor.add_text(main_text, (50, 560), font_text_path, font_size_main, (32, 32, 32))
             else:
-                if background_image != "background_yellow.png" or background_image != "background_yellow_with_image.png":
+                if background_image != "background_yellow.png" and background_image != "background_yellow_with_image.png":
                     editor.add_gradient_text(title, (50, 300), font_title_path, font_size_title)
                     editor.add_text(main_text, (50, 300 + title_height + 80), font_text_path, font_size_main,
                                     (32, 32, 32))
@@ -209,23 +208,31 @@ class Application(tk.Tk):
                 editor.add_gradient_text(title, (50, 490), font_title_path, font_size_title)
             elif title == "":
                 if background_image != "background_yellow_less.png":
-                    editor.add_text(main_text, (50, 590), font_text_path, font_size_main, (32,32,32))
+                    editor.add_text(main_text, (50, 590), font_text_path, font_size_main, (32, 32, 32))
                 else:
                     editor.add_text(title, (50, 590), font_title_path, font_size_title, (28, 28, 28))
             else:
                 if background_image != "background_yellow_less.png":
                     editor.add_gradient_text(title, (50, 500), font_title_path, font_size_title)
-                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main,
+                                    (32, 32, 32))
                 else:
                     editor.add_text(title, (50, 500), font_title_path, font_size_title, (28, 28, 28))
-                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main, (32,32,32))
+                    editor.add_text(main_text, (50, 500 + title_height + 80), font_text_path, font_size_main,
+                                    (32, 32, 32))
 
         if self.arrow_var.get():
-            # Если выбран, накладываем изображение стрелки
-            arrow_image = Image.open("images/arrow.png")
-            new_size = (300, 300)  # Новый размер в пикселях
-            arrow_image = arrow_image.resize(new_size, Image.ANTIALIAS)
-            editor.image.paste(arrow_image, (440, 750), arrow_image)
+            if background_image != "background_yellow_less.png" and background_image != "background_yellow_with_image.png":
+                # Если выбран, накладываем изображение стрелки
+                arrow_image = Image.open("images/arrow.png")
+                new_size = (300, 300)  # Новый размер в пикселях
+                arrow_image = arrow_image.resize(new_size, Image.ANTIALIAS)
+                editor.image.paste(arrow_image, (440, 750), arrow_image)
+            else:
+                arrow_image = Image.open("images/black_arrow.png")
+                new_size = (300, 300)  # Новый размер в пикселях
+                arrow_image = arrow_image.resize(new_size, Image.ANTIALIAS)
+                editor.image.paste(arrow_image, (440, 750), arrow_image)
 
         if self.xbox_var.get():
             xbox_image = Image.open("images/xbox4joy.png")
